@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NUSA RING RUN — Elang Nusa</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #f7b96a; }
+  #app { position: fixed; inset: 0; }
+  #game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #hud { position: absolute; inset: 0; pointer-events: none; font-family: ui-monospace, Menlo, Consolas, monospace; color: #eaf2f8; }
+  .panel { position: absolute; background: rgba(8, 16, 28, 0.72); border: 1px solid rgba(255, 210, 63, 0.4); border-radius: 6px; padding: 8px 10px; }
+  .tl { top: 10px; left: 10px; width: 302px; }
+  .gametitle { font-size: 20px; font-weight: bold; color: #ffd23f; letter-spacing: 1px; }
+  .subtitle { font-size: 11px; color: #9fc6e8; margin-top: 2px; }
+  .mission { font-size: 12px; font-weight: bold; color: #ff8c1a; margin-top: 6px; }
+  .goal { font-size: 11px; line-height: 1.45; margin-top: 2px; }
+  .winlose { font-size: 10px; color: #c8d6e2; margin-top: 5px; line-height: 1.4; }
+  .tc { top: 10px; left: 50%; transform: translateX(-50%); width: 470px; text-align: center; }
+  .compass { font-size: 13px; font-weight: bold; letter-spacing: 2px; }
+  .target { font-size: 13px; color: #ffd23f; margin-top: 3px; font-weight: bold; }
+  .tr { top: 10px; right: 10px; width: 196px; text-align: right; }
+  .score { font-size: 19px; font-weight: bold; color: #ffd23f; }
+  .rings, .timer, .combo { font-size: 13px; margin-top: 2px; }
+  .combo { color: #ff8c1a; font-weight: bold; }
+  .bl { bottom: 10px; left: 10px; width: 302px; }
+  .big { font-size: 15px; margin-top: 1px; }
+  .big b { color: #ffd23f; font-size: 19px; }
+  .small { font-size: 11px; color: #c8d6e2; margin-top: 4px; }
+  .barwrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .barlabel { font-size: 10px; width: 34px; color: #9fc6e8; }
+  .bartrack { flex: 1; height: 10px; background: #1c2733; border: 1px solid #3a4552; border-radius: 3px; overflow: hidden; }
+  .barfill { height: 100%; background: #2ecc40; width: 100%; }
+  .barval { font-size: 11px; width: 38px; text-align: right; }
+  .lights { font-size: 11px; margin-top: 6px; color: #c8d6e2; }
+  .bc { bottom: 10px; left: 50%; transform: translateX(-50%); text-align: center; padding: 6px; }
+  .horlabel { font-size: 10px; color: #9fc6e8; margin-top: 2px; }
+  .center { position: absolute; top: 34%; left: 50%; transform: translateX(-50%); text-align: center; width: 700px; }
+  .flash { font-size: 26px; font-weight: bold; color: #ffd23f; text-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+  .msg { font-size: 14px; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); margin-top: 6px; }
+  .banner { position: absolute; top: 128px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,0.8); }
+  .banner.win { color: #2ecc40; }
+  .banner.lose { color: #ff4444; }
+  .result { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 460px; text-align: center; padding: 16px; }
+  .resulttitle { font-size: 26px; font-weight: bold; }
+  .resulttitle.win { color: #2ecc40; }
+  .resulttitle.lose { color: #ff4444; }
+  .resultbody { font-size: 14px; line-height: 1.7; margin-top: 8px; }
+  .resultbody .again { color: #ffd23f; }
+  .titlescreen { top: 50%; left: 50%; transform: translate(-50%, -50%); width: 560px; text-align: center; padding: 20px; pointer-events: auto; }
+  .tstitle { font-size: 40px; font-weight: bold; color: #ffd23f; letter-spacing: 2px; }
+  .tssub { font-size: 13px; color: #9fc6e8; margin-top: 4px; }
+  .tsmissions { margin-top: 14px; text-align: left; }
+  .tsmission { font-size: 15px; font-weight: bold; padding: 8px 10px; border: 1px solid #3a4552; border-radius: 5px; margin-top: 6px; }
+  .tsmission.sel { border-color: #ffd23f; background: rgba(255, 210, 63, 0.12); }
+  .tsmission span { display: block; font-size: 12px; font-weight: normal; color: #c8d6e2; margin-top: 2px; }
+  .tshelp { font-size: 12px; line-height: 1.7; color: #c8d6e2; margin-top: 14px; }
+  .cockpit { position: absolute; bottom: 0; left: 0; width: 100%; height: 190px; background: #14181f; border-top: 3px solid #2a2f38; }
+  .cockpit canvas { width: 100%; height: 100%; display: block; }
+  #minimap { position: absolute; top: 132px; right: 10px; border: 1px solid rgba(255, 210, 63, 0.4); border-radius: 6px; }
+  #hud.cockpit-on .bl, #hud.cockpit-on .bc { display: none; }
+  /* v2 — kepadatan cover: checklist misi kiri, strip gauge bawah chase. */
+  .checklist { top: 168px; left: 10px; width: 302px; padding: 6px 10px; }
+  .ckhead { font-size: 12px; font-weight: bold; color: #ffd23f; letter-spacing: 1px; margin-bottom: 3px; }
+  .ckrow { font-size: 11px; line-height: 1.5; }
+  .ckrow.done { color: #2ecc40; }
+  .ckrow.next { color: #ff8c1a; font-weight: bold; }
+  .ckrow.todo { color: #8a94a3; }
+  .ckfoot { font-size: 10px; color: #9fc6e8; margin-top: 4px; }
+  .strip { position: absolute; bottom: 0; left: 0; width: 100%; height: 112px; background: #14181f; border-top: 3px solid #2a2f38; }
+  .strip canvas { width: 100%; height: 100%; display: block; }
+  /* Di chase view panel kiri-bawah + horizon naik di atas strip. */
+  #hud.chase-on .bl, #hud.chase-on .bc { bottom: 122px; }
+  #hud.cockpit-on .checklist, #hud.cockpit-on .strip { display: none; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="game" aria-label="Nusa Ring Run: terbangkan Elang Nusa lewat 10 ring dan mendarat di Lapangan Terbang Nusa"></canvas>
+  <p id="status" role="status" aria-live="polite"></p>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
